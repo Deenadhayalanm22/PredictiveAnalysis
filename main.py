@@ -6,7 +6,8 @@ from app import app
 from flask import request, jsonify, render_template
 from db_config import mysql
 from db_config import db_connection
-
+from predictive_model import joblib
+from dummy_input import requests
 
 app.config["DEBUG"]=True
 
@@ -35,6 +36,19 @@ def show_data():
 def load_data():
 		df=pd.read_sql("SELECT * FROM POPULATION", con=db_connection)
 		return render_template('index.html', result = df)
+
+@app.route("/predict", methods=['POST'])
+def predict():
+    if request.method == 'POST':
+        try:
+            data = request.get_json()
+            years_of_experience = float(data["yearsOfExperience"])
+            
+            lin_reg = joblib.load("./linear_regression_model.pkl")
+        except ValueError:
+            return jsonify("Please enter a number.")
+
+        return jsonify(lin_reg.predict(years_of_experience).tolist())
 
 if __name__ == "__main__":
     app.run()
